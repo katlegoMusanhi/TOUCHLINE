@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Touchline Collective</title>
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
   <style>
     body {
       margin: 0;
@@ -74,16 +75,22 @@
       color: #ff5733;
     }
 
-    footer {
-      background-color: #222;
+    .jersey button {
+      background-color: #ff5733;
       color: white;
-      text-align: center;
-      padding: 20px;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .jersey button:hover {
+      background-color: #e64a19;
     }
 
     #contact {
       background-color: #ffe8cc;
-      padding: 40px 20px;
     }
 
     #contact form {
@@ -114,6 +121,31 @@
     #contact button:hover {
       background-color: #e64a19;
     }
+
+    #cart {
+      background-color: #fff3e0;
+    }
+
+    #cart ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    #cart li {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #paypal-button-container {
+      margin-top: 20px;
+    }
+
+    footer {
+      background-color: #222;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -127,43 +159,47 @@
     <a href="#home">Home</a>
     <a href="#jerseys">Jerseys</a>
     <a href="#contact">Contact Us</a>
+    <a href="#cart">Cart (<span id="cart-count">0</span>)</a>
   </nav>
 
   <section id="home">
     <h2>Welcome to The Touchline Collective</h2>
-    <p>
-      We’re passionate about the game, and we bring you the most striking, high-quality football jerseys from clubs and nations across the globe. Whether you're a die-hard fan or just love bold sportswear, we’ve got you covered!
-    </p>
+    <p>We’re passionate about the game, and we bring you the most striking, high-quality football jerseys from clubs and nations across the globe. Whether you're a die-hard fan or just love bold sportswear, we’ve got you covered!</p>
   </section>
 
   <section id="jerseys">
     <h2>Our Jerseys</h2>
     <div class="jersey-grid">
       <div class="jersey">
-        <img src="./assets/images/IMG_5889.jpeg" alt="Jersey 1" />
+        <img src="../assets/images/IMG_5889.jpeg" alt="AC Milan Jersey" />
         <h3>AC MILAN 08/09 HOME</h3>
         <p>P400</p>
+        <button onclick="addToCart('AC MILAN 08/09 HOME', 400)">Add to Cart</button>
       </div>
       <div class="jersey">
-        <img src="./assets/images/IMG_5890.jpeg" alt="Jersey 2" />
-        <h3>ARSENAL 21-22 HOME </h3>
+        <img src="../assets/images/IMG_5890.jpeg" alt="Arsenal Jersey" />
+        <h3>ARSENAL 21-22 HOME</h3>
         <p>P350</p>
+        <button onclick="addToCart('ARSENAL 21-22 HOME', 350)">Add to Cart</button>
       </div>
       <div class="jersey">
-        <img src="./assets/images/IMG_5891.jpeg" alt="Jersey 3" />
+        <img src="../assets/images/IMG_5891.jpeg" alt="Man City Jersey" />
         <h3>MANCHESTER CITY 19/20 3RD KIT</h3>
         <p>P400</p>
+        <button onclick="addToCart('MAN CITY 3RD KIT 19/20', 400)">Add to Cart</button>
       </div>
       <div class="jersey">
-        <img src="./assets/images/IMG_5892.jpeg" alt="Jersey 1" />
+        <img src="../assets/images/IMG_5892.jpeg" alt="Man United Jersey" />
         <h3>MANCHESTER UNITED 08/09 CHAMPIONS LEAGUE</h3>
         <p>P450</p>
+        <button onclick="addToCart('MAN UTD CL 08/09', 450)">Add to Cart</button>
+      </div>
     </div>
   </section>
 
   <section id="contact">
     <h2>Contact Us</h2>
-    <form>
+    <form onsubmit="alert('Message sent!'); return false;">
       <input type="text" placeholder="Your Name" required />
       <input type="email" placeholder="Your Email" required />
       <textarea placeholder="Your Message" rows="5" required></textarea>
@@ -171,9 +207,78 @@
     </form>
   </section>
 
+  <section id="cart">
+    <h2>Your Cart</h2>
+    <ul id="cart-items">
+      <li>No items yet.</li>
+    </ul>
+    <p><strong>Total: P<span id="total">0</span></strong></p>
+    <div id="paypal-button-container"></div>
+  </section>
+
   <footer>
     &copy; 2025 The Touchline Collective. All rights reserved.
   </footer>
+
+  <script>
+    const cart = [];
+    function addToCart(item, price) {
+      cart.push({ item, price });
+      updateCart();
+      alert(`${item} added to cart`);
+    }
+
+    function updateCart() {
+      const cartList = document.getElementById("cart-items");
+      const totalDisplay = document.getElementById("total");
+      const countDisplay = document.getElementById("cart-count");
+      cartList.innerHTML = "";
+
+      let total = 0;
+      cart.forEach(({ item, price }) => {
+        const li = document.createElement("li");
+        li.textContent = `${item} - P${price}`;
+        cartList.appendChild(li);
+        total += price;
+      });
+
+      if (cart.length === 0) {
+        cartList.innerHTML = "<li>No items yet.</li>";
+      }
+
+      totalDisplay.textContent = total;
+      countDisplay.textContent = cart.length;
+
+      renderPayPalButton(total);
+    }
+
+    function renderPayPalButton(totalPula) {
+      const usd = (totalPula / 18.5).toFixed(2); // Convert Pula to USD (estimate)
+
+      document.getElementById("paypal-button-container").innerHTML = ""; // clear previous button
+
+      if (totalPula > 0) {
+        paypal.Buttons({
+          createOrder: function(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: { value: usd }
+              }]
+            });
+          },
+          onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+              alert(`Payment successful! Thank you ${details.payer.name.given_name}.`);
+              cart.length = 0;
+              updateCart();
+            });
+          }
+        }).render("#paypal-button-container");
+      }
+    }
+
+    renderPayPalButton(0); // Initialize button at load
+  </script>
 
 </body>
 </html>
